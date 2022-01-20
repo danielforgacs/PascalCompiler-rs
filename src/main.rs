@@ -57,7 +57,7 @@ impl Interpreter {
                 self.pos += 1;
                 return token;
             }
-            _ => panic!(),
+            _ => panic!("Unknown char: \"{}\", ord: {}", current_char, current_char as u8),
         }
     }
 
@@ -99,7 +99,7 @@ mod test {
 
     #[test]
     fn interpreter() {
-        let mut interpreter = Interpreter::new("3+4".to_string());
-        assert_eq!(interpreter.expr(), 3+4);
+        let mut interpreter = Interpreter::new("345  +  432".to_string());
+        assert_eq!(interpreter.expr(), 345  +  432);
     }
 }
