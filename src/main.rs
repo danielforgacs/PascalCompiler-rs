@@ -81,7 +81,6 @@ impl Interpreter {
 
 fn main() {
     loop {
-        // let source = r#"5+2"#;
         let mut source = String::new();
         std::io::stdin().read_line(&mut source).unwrap();
         if source == "\n".to_string() {
@@ -91,5 +90,16 @@ fn main() {
         let mut interpreter = Interpreter::new(source.to_string());
         let result = interpreter.expr();
         println!("{}", result);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Interpreter;
+
+    #[test]
+    fn interpreter() {
+        let mut interpreter = Interpreter::new("3+4".to_string());
+        assert_eq!(interpreter.expr(), 3+4);
     }
 }
