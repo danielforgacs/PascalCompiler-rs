@@ -2,6 +2,7 @@
 enum Token {
     INTEGER(u32),
     PLUS,
+    MINUS,
     EOF,
 }
 
@@ -9,6 +10,7 @@ struct Interpreter {
     text: String,
     pos: usize,
     current_token: Token,
+    current_char: char,
 }
 
 impl Token {
@@ -22,10 +24,12 @@ impl Token {
 
 impl Interpreter {
     fn new(text: String) -> Self {
+        let first_char = text.chars().nth(0).unwrap();
         Self {
             text,
             pos: 0,
             current_token: Token::EOF,
+            current_char: first_char,
         }
     }
 
@@ -33,32 +37,50 @@ impl Interpreter {
         panic!("Error parsing input.")
     }
 
+    fn advanve(&mut self) {
+        self.pos += 1;
+        if self.pos > self.text.len() - 1 {
+            self.current_char = '\0';
+        } else {
+            self.current_char = self.text.chars().nth(self.pos).unwrap();
+        }
+    }
+
+    fn skip_white_space(&mut self) {
+        while self.current_char.is_whitespace() {
+            self.advanve();
+        }
+    }
+
+    fn integer(&mut self) -> u32 {
+        let mut result = String::new();
+        while self.current_char.is_digit(10) {
+            result.push(self.current_char);
+            self.advanve();
+        }
+        result.parse::<u32>().unwrap()
+    }
+
     fn get_next_token(&mut self) -> Token {
-        let text = self.text.as_str();
-        if self.pos > text.len() - 1 {
-            return Token::EOF;
+        while self.current_char != '\0' {
+            if self.current_char.is_whitespace() {
+                self.skip_white_space();
+                continue;
+            }
+            if self.current_char.is_digit(10) {
+                return Token::INTEGER(self.integer());
+            }
+            if self.current_char == '+' {
+                self.advanve();
+                return Token::PLUS;
+            }
+            if self.current_char == '-' {
+                self.advanve();
+                return Token::MINUS;
+            }
+            self.error();
         }
-        let current_char = text.chars()
-            .nth(self.pos)
-            .unwrap();
-        match current_char {
-            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                let token = Token::INTEGER(current_char.to_digit(10).unwrap());
-                self.pos += 1;
-                return token;
-            }
-            '+' => {
-                let token = Token::PLUS;
-                self.pos += 1;
-                return token;
-            }
-            '\n' => {
-                let token = Token::EOF;
-                self.pos += 1;
-                return token;
-            }
-            _ => panic!("Unknown char: \"{}\", ord: {}", current_char, current_char as u8),
-        }
+        return Token::EOF;
     }
 
     fn eat(&mut self, ttype: Token) {
@@ -72,10 +94,21 @@ impl Interpreter {
         let left = &self.current_token.clone();
         self.eat(Token::INTEGER(0));
         let op = &self.current_token.clone();
-        self.eat(Token::PLUS);
+        match op {
+            Token::PLUS => self.eat(Token::PLUS),
+            Token::MINUS => self.eat(Token::MINUS),
+            _ => self.error(),
+        }
         let right = &self.current_token.clone();
         self.eat(Token::INTEGER(0));
-        left.int_value() + right.int_value()
+        match op {
+            Token::PLUS => return left.int_value() + right.int_value(),
+            Token::MINUS => return left.int_value() - right.int_value(),
+            _ => {
+                self.error();
+                0
+            },
+        }
     }
 }
 
@@ -101,5 +134,11 @@ mod test {
     fn interpreter() {
         let mut interpreter = Interpreter::new("345  +  432".to_string());
         assert_eq!(interpreter.expr(), 345  +  432);
+    }
+
+    #[test]
+    fn interpreter_02() {
+        let mut interpreter = Interpreter::new("123  -  73".to_string());
+        assert_eq!(interpreter.expr(), 123  -  73);
     }
 }
