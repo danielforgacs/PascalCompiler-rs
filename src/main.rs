@@ -89,8 +89,16 @@ impl Interpreter {
         }
     }
 
+    fn term(&mut self) -> u32 {
+        let token = self.current_token;
+        self.eat(Token::INTEGER(0));
+        token.int_value()
+    }
+
     fn expr(&mut self) -> u32 {
         self.current_token = self.get_next_token();
+        let result = self.term();
+
         let left = &self.current_token.clone();
         self.eat(Token::INTEGER(0));
         let op = &self.current_token.clone();
